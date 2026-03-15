@@ -6,10 +6,10 @@ app.innerHTML = `
 <input type="file" id="fileInput" accept="application/pdf">
 
 <p style="margin-top:20px">
-اكتب رقم الصفحة التي تريد استخراجها
+اكتب الصفحات التي تريد استخراجها
 </p>
 
-<input id="pageNumber" type="number" min="1" style="padding:8px">
+<input id="pages" placeholder="مثال: 1,3,5-8" style="padding:10px;width:200px">
 
 <br><br>
 
@@ -21,48 +21,67 @@ border:none;
 border-radius:8px;
 cursor:pointer;
 ">
-استخراج الصفحة
+استخراج الصفحات
 </button>
 `;
 
-const input = document.getElementById("fileInput");
-const btn = document.getElementById("splitBtn");
+document.getElementById("splitBtn").onclick = async () => {
 
-btn.onclick = async () => {
+const file = document.getElementById("fileInput").files[0];
 
- const file = input.files[0];
+if(!file){
+ alert("اختر ملف PDF");
+ return;
+}
 
- if(!file){
-  alert("اختر ملف PDF");
-  return;
+const pagesInput = document.getElementById("pages").value;
+
+if(!pagesInput){
+ alert("اكتب الصفحات");
+ return;
+}
+
+const { PDFDocument } = PDFLib;
+
+const bytes = await file.arrayBuffer();
+const pdf = await PDFDocument.load(bytes);
+
+const newPdf = await PDFDocument.create();
+
+let pages = [];
+
+pagesInput.split(",").forEach(p => {
+
+ if(p.includes("-")){
+  let range = p.split("-");
+  let start = parseInt(range[0]);
+  let end = parseInt(range[1]);
+
+  for(let i=start;i<=end;i++){
+   pages.push(i-1);
+  }
+
+ }else{
+  pages.push(parseInt(p)-1);
  }
 
- const pageNumber = parseInt(document.getElementById("pageNumber").value);
+});
 
- if(!pageNumber){
-  alert("ادخل رقم الصفحة");
-  return;
- }
+const copied = await newPdf.copyPages(pdf,pages);
 
- const { PDFDocument } = PDFLib;
+copied.forEach(p=>newPdf.addPage(p));
 
- const bytes = await file.arrayBuffer();
- const pdf = await PDFDocument.load(bytes);
+const newBytes = await newPdf.save();
 
- const newPdf = await PDFDocument.create();
+const blob = new Blob([newBytes],{type:"application/pdf"});
 
- const [page] = await newPdf.copyPages(pdf,[pageNumber-1]);
+const url = URL.createObjectURL(blob);
 
- newPdf.addPage(page);
+const a = document.createElement("a");
 
- const newBytes = await newPdf.save();
+a.href=url;
+a.download="split.pdf";
 
- const blob = new Blob([newBytes],{type:"application/pdf"});
- const url = URL.createObjectURL(blob);
-
- const a = document.createElement("a");
- a.href = url;
- a.download = "page.pdf";
- a.click();
+a.click();
 
 };
