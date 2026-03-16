@@ -62,3 +62,10 @@ preview.appendChild(canvas)
 }
 
 }
+input.onchange = e => {
+
+files = [...e.target.files]
+
+previewPDF(files[0])
+
+}
