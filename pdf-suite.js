@@ -7,6 +7,7 @@ app.innerHTML = `
 <option value="merge">دمج PDF</option>
 <option value="split">تقسيم PDF</option>
 <option value="compress">ضغط PDF</option>
+<option value="export">تصدير الصفحات المحددة</option>
 </select>
 
 <div id="dropZone" style="
@@ -48,6 +49,7 @@ let files = [];
 let pagesOrder = [];
 let selectedPages = [];
 let dragIndex = null;
+let originalPDF = null;
 
 
 /* فتح اختيار الملف */
@@ -93,6 +95,8 @@ selectedPages = [];
 const pdfjsLib = window['pdfjs-dist/build/pdf'];
 
 const data = await file.arrayBuffer();
+
+originalPDF = await PDFLib.PDFDocument.load(data);
 
 const pdf = await pdfjsLib.getDocument({data}).promise;
 
@@ -281,18 +285,48 @@ preview.appendChild(items[i-1]);
 
 /* زر التنفيذ */
 
-document.getElementById("runBtn").onclick = () => {
+document.getElementById("runBtn").onclick = async () => {
 
 const tool = document.getElementById("toolSelect").value;
 
 if(selectedPages.length===0){
 
 alert("لم يتم تحديد صفحات");
-
 return;
 
 }
 
-alert("الأداة: "+tool+" | الصفحات: "+selectedPages.join(","));
+if(tool==="export"){
+
+const newPDF = await PDFLib.PDFDocument.create()
+
+for(let p of selectedPages){
+
+const [copiedPage] = await newPDF.copyPages(originalPDF,[p-1])
+
+newPDF.addPage(copiedPage)
+
+}
+
+const pdfBytes = await newPDF.save()
+
+const blob = new Blob([pdfBytes],{type:"application/pdf"})
+
+const url = URL.createObjectURL(blob)
+
+const a = document.createElement("a")
+
+a.href = url
+a.download = "edited.pdf"
+
+a.click()
+
+}
+
+else{
+
+alert("الأداة: "+tool+" | الصفحات: "+selectedPages.join(","))
+
+}
 
 };
