@@ -46,6 +46,7 @@ const dropZone = document.getElementById("dropZone");
 
 let files = [];
 let pagesOrder = [];
+let selectedPages = [];
 let dragIndex = null;
 
 
@@ -86,8 +87,8 @@ previewPDF(files[0]);
 async function previewPDF(file){
 
 preview.innerHTML = "";
-
 pagesOrder = [];
+selectedPages = [];
 
 const pdfjsLib = window['pdfjs-dist/build/pdf'];
 
@@ -180,7 +181,33 @@ wrapper.remove();
 
 pagesOrder = pagesOrder.filter(p => p !== i);
 
+selectedPages = selectedPages.filter(p => p !== i);
+
 };
+
+
+
+/* اختيار الصفحات */
+
+wrapper.onclick = (e)=>{
+
+if(e.ctrlKey){
+
+wrapper.classList.toggle("selected")
+
+}else{
+
+document.querySelectorAll(".selected").forEach(el=>{
+el.classList.remove("selected")
+})
+
+wrapper.classList.add("selected")
+
+}
+
+updateSelection()
+
+}
 
 
 
@@ -216,6 +243,24 @@ pagesOrder.push(i);
 
 
 
+/* تحديث الصفحات المحددة */
+
+function updateSelection(){
+
+selectedPages = []
+
+document.querySelectorAll(".selected").forEach(el=>{
+
+const num = parseInt(el.querySelector("span").textContent)
+
+selectedPages.push(num)
+
+})
+
+}
+
+
+
 /* إعادة ترتيب المعاينة */
 
 function renderPreview(){
@@ -240,6 +285,14 @@ document.getElementById("runBtn").onclick = () => {
 
 const tool = document.getElementById("toolSelect").value;
 
-alert("تم اختيار الأداة: " + tool);
+if(selectedPages.length===0){
+
+alert("لم يتم تحديد صفحات");
+
+return;
+
+}
+
+alert("الأداة: "+tool+" | الصفحات: "+selectedPages.join(","));
 
 };
