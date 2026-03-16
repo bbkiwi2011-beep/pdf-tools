@@ -29,67 +29,123 @@ font-size:16px;
 ">
 دمج وتحميل الملف
 </button>
+
+<p id="status" style="margin-top:15px;color:#666"></p>
 `;
 
 const dropZone = document.getElementById("dropZone");
 const input = document.getElementById("fileInput");
 const list = document.getElementById("fileList");
 const mergeBtn = document.getElementById("mergeBtn");
+const status = document.getElementById("status");
 
 let files = [];
 
 dropZone.onclick = () => input.click();
 
 input.onchange = e => {
-  files = [...files, ...e.target.files];
-  renderList();
+addFiles([...e.target.files]);
 };
 
 dropZone.ondragover = e => {
-  e.preventDefault();
+e.preventDefault();
 };
 
 dropZone.ondrop = e => {
-  e.preventDefault();
-  files = [...files, ...e.dataTransfer.files];
-  renderList();
+e.preventDefault();
+addFiles([...e.dataTransfer.files]);
 };
 
+function addFiles(newFiles){
+
+newFiles.forEach(file => {
+
+if(file.type !== "application/pdf") return;
+
+if(!files.find(f => f.name === file.name)){
+files.push(file);
+}
+
+});
+
+renderList();
+
+}
+
 function renderList(){
-  list.innerHTML = "";
-  files.forEach(f => {
-    let li = document.createElement("li");
-    li.textContent = f.name;
-    list.appendChild(li);
-  });
+
+list.innerHTML = "";
+
+files.forEach((file,index)=>{
+
+const li = document.createElement("li");
+
+li.style.marginBottom="6px";
+
+li.innerHTML = `
+${file.name}
+<button data-index="${index}" style="
+margin-right:10px;
+background:#e74c3c;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+padding:2px 8px;
+">حذف</button>
+`;
+
+list.appendChild(li);
+
+});
+
+document.querySelectorAll("[data-index]").forEach(btn=>{
+btn.onclick=()=>{
+files.splice(btn.dataset.index,1);
+renderList();
+};
+});
+
 }
 
 mergeBtn.onclick = async () => {
 
-  if(files.length < 2){
-    alert("اختر ملفين على الأقل");
-    return;
-  }
+if(files.length < 2){
+alert("اختر ملفين على الأقل");
+return;
+}
 
-  const { PDFDocument } = PDFLib;
+status.textContent="جاري دمج الملفات...";
 
-  const mergedPdf = await PDFDocument.create();
+const { PDFDocument } = PDFLib;
 
-  for (let file of files){
-    const bytes = await file.arrayBuffer();
-    const pdf = await PDFDocument.load(bytes);
-    const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-    pages.forEach(p => mergedPdf.addPage(p));
-  }
+const mergedPdf = await PDFDocument.create();
 
-  const mergedBytes = await mergedPdf.save();
+for (let file of files){
 
-  const blob = new Blob([mergedBytes], {type:"application/pdf"});
-  const url = URL.createObjectURL(blob);
+const bytes = await file.arrayBuffer();
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "merged.pdf";
-  a.click();
+const pdf = await PDFDocument.load(bytes);
+
+const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+
+pages.forEach(p => mergedPdf.addPage(p));
+
+}
+
+const mergedBytes = await mergedPdf.save();
+
+const blob = new Blob([mergedBytes], {type:"application/pdf"});
+
+const url = URL.createObjectURL(blob);
+
+const a = document.createElement("a");
+
+a.href = url;
+a.download = "merged.pdf";
+
+a.click();
+
+status.textContent="تم دمج الملفات بنجاح";
 
 };
