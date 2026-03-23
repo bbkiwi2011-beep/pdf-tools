@@ -1,8 +1,7 @@
-window.ToolModules = window.ToolModules || {};
+window.__TS__ = window.__TS__ || { modules: {} };
 
-window.ToolModules.pdf = {
+window.__TS__.modules['pdf'] = {
 
-  // 🔐 state داخلي
   _events: [],
   _libsLoaded: false,
 
@@ -19,7 +18,6 @@ window.ToolModules.pdf = {
     console.log("PDF INIT");
 
     try {
-      // ✅ تحميل المكتبات مرة واحدة فقط
       if (!this._libsLoaded) {
         await this.loadLib("https://unpkg.com/pdf-lib/dist/pdf-lib.min.js");
         this._libsLoaded = true;
@@ -33,22 +31,20 @@ window.ToolModules.pdf = {
       btn.className = "tool-btn";
 
       const handler = () => {
-        app.toast("PDF Engine Ready 🚀", "success");
+        app.toast("PDF Engine Ready 🚀");
       };
 
       btn.addEventListener("click", handler);
       container.appendChild(btn);
 
-      // 🧠 تسجيل event بشكل آمن
       this._events.push({ el: btn, type: "click", handler });
 
     } catch (err) {
       console.error(err);
-      app.toast("PDF Failed ❌", "error");
+      app.toast("PDF Failed ❌");
     }
   },
 
-  // 🧩 Loader داخلي للمكتبات
   async loadLib(src) {
     if (document.querySelector(`script[src="${src}"]`)) return;
 
@@ -65,16 +61,12 @@ window.ToolModules.pdf = {
   destroy() {
     console.log("PDF DESTROY");
 
-    // 🧹 إزالة الأحداث
-    if (this._events && this._events.length) {
-      this._events.forEach(e => {
-        if (e.el) e.el.removeEventListener(e.type, e.handler);
-      });
-    }
+    this._events.forEach(e => {
+      if (e.el) e.el.removeEventListener(e.type, e.handler);
+    });
 
     this._events = [];
 
-    // 🧹 تنظيف DOM فقط داخل النطاق
     const app = document.getElementById("pdf-app");
     if (app) app.innerHTML = "";
   }
