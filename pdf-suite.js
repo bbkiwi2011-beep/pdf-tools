@@ -44,3 +44,13 @@ window.ToolModules.pdf = {
   }
 
 };
+async loadLib(src) {
+  if (document.querySelector(`script[src="${src}"]`)) return;
+  await new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = res;
+    s.onerror = rej;
+    document.body.appendChild(s);
+  });
+}
